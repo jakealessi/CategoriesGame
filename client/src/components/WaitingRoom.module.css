@@ -1,0 +1,340 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 40px 36px;
+  box-shadow: var(--shadow-xl);
+  max-width: 460px;
+  width: 100%;
+  border: 1px solid var(--border);
+}
+
+.roomCodeSection {
+  margin-bottom: 24px;
+}
+
+.roomCodeLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.roomCodeDisplay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--blue);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+}
+
+.roomCode {
+  flex: 1;
+  font-size: clamp(1.6rem, 5vw, 2rem);
+  font-weight: 800;
+  color: white;
+  letter-spacing: 5px;
+  text-align: center;
+}
+
+.copyButton {
+  width: 42px;
+  height: 42px;
+  font-size: 1.3rem;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copyButton:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.nameSection {
+  margin-bottom: 24px;
+}
+
+.nameRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-weight: 600;
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(79, 124, 219, 0.12);
+}
+
+.updateButton {
+  width: 34px;
+  height: 34px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  background: var(--green);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.updateButton:hover {
+  background: var(--green-dark);
+}
+
+.colorPickerWrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.colorSwatch {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  padding: 0;
+}
+
+.colorSwatch:hover {
+  border-color: var(--text-secondary);
+}
+
+.colorDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  padding: 6px;
+}
+
+.playersSection {
+  margin-bottom: 24px;
+}
+
+.playersSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.playersLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.playersCount {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--blue);
+  background: rgba(79, 124, 219, 0.08);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.playersList {
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  padding: 10px;
+}
+
+.playerItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.playerItem:last-of-type {
+  margin-bottom: 0;
+}
+
+.playerItem.winnerGlow {
+  border-color: var(--glow-color);
+  box-shadow: 0 0 8px var(--glow-color), 0 0 20px color-mix(in srgb, var(--glow-color) 30%, transparent);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px var(--glow-color), 0 0 20px color-mix(in srgb, var(--glow-color) 30%, transparent); }
+  50% { box-shadow: 0 0 12px var(--glow-color), 0 0 30px color-mix(in srgb, var(--glow-color) 40%, transparent); }
+}
+
+.winTally {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--green);
+  background: rgba(61, 184, 130, 0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.playerAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.playerName {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.youBadge {
+  margin-left: 8px;
+  color: var(--blue);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(79, 124, 219, 0.08);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.emptySlot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 2px dashed var(--border);
+  margin-top: 6px;
+}
+
+.emptyAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  border: 2px dashed var(--border);
+}
+
+.emptyText {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.startButton,
+.leaveButton {
+  flex: 1;
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.startButton {
+  background: var(--blue);
+}
+
+.startButton:hover {
+  background: var(--blue-dark);
+  box-shadow: 0 8px 24px rgba(79, 124, 219, 0.3);
+}
+
+.leaveButton {
+  background: var(--text-secondary);
+  flex: 0;
+  min-width: 90px;
+}
+
+.leaveButton:hover {
+  background: var(--red);
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 28px 20px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .startButton,
+  .leaveButton {
+    width: 100%;
+    flex: unset;
+  }
+}
