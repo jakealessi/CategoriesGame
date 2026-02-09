@@ -7,6 +7,8 @@ import ResultsScreen from './components/ResultsScreen'
 import ErrorToast from './components/ErrorToast'
 import './index.css'
 
+const REJOIN_KEY = 'categories-game-rejoin'
+
 const socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:3000', {
   transports: ['websocket', 'polling']
 })
@@ -25,8 +27,30 @@ function App() {
   const [lastWinner, setLastWinner] = useState(null)
   const [categoryList, setCategoryList] = useState([])
 
+  // Attempt rejoin on load (e.g. after refresh)
+  useEffect(() => {
+    const saved = sessionStorage.getItem(REJOIN_KEY)
+    if (!saved) return
+    let data
+    try {
+      data = JSON.parse(saved)
+    } catch {
+      sessionStorage.removeItem(REJOIN_KEY)
+      return
+    }
+    const tryRejoin = () => {
+      if (socket.connected) {
+        socket.emit('rejoin-game', { roomCode: data.roomCode, rejoinToken: data.rejoinToken })
+      } else {
+        socket.once('connect', tryRejoin)
+      }
+    }
+    tryRejoin()
+  }, [])
+
   useEffect(() => {
     socket.on('game-created', (data) => {
+      sessionStorage.setItem(REJOIN_KEY, JSON.stringify({ roomCode: data.roomCode, playerNumber: data.playerNumber, rejoinToken: data.rejoinToken }))
       setCurrentRoom(data.roomCode)
       setPlayerNumber(data.playerNumber)
       setLastWinner(null)
@@ -35,11 +59,38 @@ function App() {
     })
 
     socket.on('game-joined', (data) => {
+      sessionStorage.setItem(REJOIN_KEY, JSON.stringify({ roomCode: data.roomCode, playerNumber: data.playerNumber, rejoinToken: data.rejoinToken }))
       setCurrentRoom(data.roomCode)
       setPlayerNumber(data.playerNumber)
       setLastWinner(null)
       setScreen('waiting')
       fetchCategories()
+    })
+
+    socket.on('rejoin-success', (data) => {
+      setCurrentRoom(data.roomCode)
+      setPlayerNumber(data.playerNumber)
+      if (data.screen === 'waiting') {
+        setPlayers(data.players || [])
+        setLastWinner(data.lastWinner || null)
+        setScreen('waiting')
+        fetchCategories()
+      } else if (data.screen === 'game') {
+        setCategory(data.category)
+        setTimeLeft(data.timeLeft)
+        setPlayers(data.players || [])
+        setAllAnswers(data.allAnswers || [])
+        setScreen('game')
+      } else if (data.screen === 'results') {
+        setResults({ results: data.results, winner: data.winner, allPossibleAnswers: data.allPossibleAnswers || [] })
+        setScreen('results')
+      }
+    })
+
+    socket.on('rejoin-failed', () => {
+      sessionStorage.removeItem(REJOIN_KEY)
+      setError('Could not rejoin game')
+      setTimeout(() => setError(null), 3000)
     })
 
     socket.on('players-ready', (data) => {
@@ -124,6 +175,8 @@ function App() {
     return () => {
       socket.off('game-created')
       socket.off('game-joined')
+      socket.off('rejoin-success')
+      socket.off('rejoin-failed')
       socket.off('players-ready')
       socket.off('game-started')
       socket.off('time-update')
@@ -162,6 +215,7 @@ function App() {
   }
 
   const leaveGame = () => {
+    sessionStorage.removeItem(REJOIN_KEY)
     socket.emit('leave-game', currentRoom)
     setCurrentRoom(null)
     setPlayerNumber(null)

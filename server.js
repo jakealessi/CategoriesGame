@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { categories } from './categories.js';
@@ -75,10 +76,15 @@ function levenshteinDistance(str1, str2) {
   return dp[m][n];
 }
 
-// Fuzzy match function - allows small typos
+// Strip punctuation for comparison (ignore apostrophes, periods, etc.)
+function normalizeForMatch(str) {
+  return str.toLowerCase().trim().replace(/[^\w\s]/g, '');
+}
+
+// Fuzzy match function - allows small typos, ignores punctuation
 function fuzzyMatch(input, target) {
-  const normalizedInput = input.toLowerCase().trim();
-  const normalizedTarget = target.toLowerCase().trim();
+  const normalizedInput = normalizeForMatch(input);
+  const normalizedTarget = normalizeForMatch(target);
   
   // Exact match
   if (normalizedInput === normalizedTarget) {
@@ -118,8 +124,8 @@ function fuzzyMatch(input, target) {
 // Partial name match - checks if all input words appear in the target
 // e.g. "George Bush" matches "George H.W. Bush" and "George W. Bush"
 function partialNameMatch(input, target) {
-  const inputWords = input.toLowerCase().trim().split(/\s+/);
-  const targetWords = target.toLowerCase().trim().split(/\s+/);
+  const inputWords = normalizeForMatch(input).split(/\s+/);
+  const targetWords = normalizeForMatch(target).split(/\s+/);
   
   // Input must have at least 2 words, target must have more words than input
   if (inputWords.length < 2 || targetWords.length <= inputWords.length) return false;
@@ -144,9 +150,10 @@ io.on('connection', (socket) => {
 
   socket.on('create-game', () => {
     const roomCode = generateRoomCode();
+    const rejoinToken = crypto.randomUUID();
     const game = {
       roomCode,
-      players: [{ id: socket.id, name: 'Player 1', score: 0, answers: [], wins: 0, color: DEFAULT_COLORS[0] }],
+      players: [{ id: socket.id, name: 'Player 1', score: 0, answers: [], wins: 0, color: DEFAULT_COLORS[0], rejoinToken }],
       status: 'waiting',
       category: null,
       timeLeft: 60,
@@ -158,7 +165,7 @@ io.on('connection', (socket) => {
     
     games.set(roomCode, game);
     socket.join(roomCode);
-    socket.emit('game-created', { roomCode, playerNumber: 1 });
+    socket.emit('game-created', { roomCode, playerNumber: 1, rejoinToken });
     
     // Send initial player list so the creator sees themselves
     socket.emit('players-ready', {
@@ -186,9 +193,10 @@ io.on('connection', (socket) => {
     }
     
     const playerNumber = game.players.length + 1;
-    game.players.push({ id: socket.id, name: `Player ${playerNumber}`, score: 0, answers: [], wins: 0, color: DEFAULT_COLORS[playerNumber - 1] || DEFAULT_COLORS[0] });
+    const rejoinToken = crypto.randomUUID();
+    game.players.push({ id: socket.id, name: `Player ${playerNumber}`, score: 0, answers: [], wins: 0, color: DEFAULT_COLORS[playerNumber - 1] || DEFAULT_COLORS[0], rejoinToken });
     socket.join(roomCode);
-    socket.emit('game-joined', { roomCode, playerNumber });
+    socket.emit('game-joined', { roomCode, playerNumber, rejoinToken });
     
     // Notify all players
     io.to(roomCode).emit('players-ready', {
@@ -293,6 +301,11 @@ io.on('connection', (socket) => {
     
     const playerIndex = game.players.findIndex(p => p.id === socket.id);
     if (playerIndex !== -1) {
+      // Clear any pending rejoin timeout (explicit leave = no rejoin)
+      const p = game.players[playerIndex];
+      if (p.rejoinTimeout) {
+        clearTimeout(p.rejoinTimeout);
+      }
       const playerName = game.players[playerIndex].name;
       game.players.splice(playerIndex, 1);
       
@@ -417,6 +430,12 @@ io.on('connection', (socket) => {
           wins: p.wins
         }))
       });
+
+      // End game early if all answers have been guessed
+      if (game.usedAnswers.length >= categoryData.length) {
+        if (game.timer) clearInterval(game.timer);
+        endGame(game);
+      }
     } else if (allMatches.length > 0) {
       // Had matches but all were already used
       socket.emit('answer-result', {
@@ -438,44 +457,115 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     
-    // Find and clean up games
     for (const [roomCode, game] of games.entries()) {
       const playerIndex = game.players.findIndex(p => p.id === socket.id);
       
       if (playerIndex !== -1) {
-        // Don't remove players during finished state - the auto-return
-        // timeout handles the transition. Socket.IO can briefly reconnect
-        // during that window, which would wrongly delete the game.
+        const player = game.players[playerIndex];
+        
+        // During finished state, don't remove - let return-to-lobby timeout handle it
         if (game.status === 'finished') {
           break;
         }
         
-        const playerName = game.players[playerIndex].name;
-        game.players.splice(playerIndex, 1);
-        
-        if (game.players.length === 0) {
-          // No players left - clean up entirely
-          if (game.timer) {
-            clearInterval(game.timer);
-          }
-          games.delete(roomCode);
-          console.log('Game deleted (no players):', roomCode);
-        } else {
-          // Still have players - notify them
-          io.to(roomCode).emit('player-left', { playerName });
-          io.to(roomCode).emit('players-ready', {
-            players: game.players.map(p => ({ name: p.name, score: p.score, color: p.color, wins: p.wins }))
-          });
+        // Mark disconnected but keep slot for rejoin (60s grace period)
+        const playerName = player.name;
+        player.id = null;
+        player.rejoinTimeout = setTimeout(() => {
+          const idx = game.players.findIndex(p2 => p2 === player);
+          if (idx === -1) return;
+          game.players.splice(idx, 1);
           
-          // Transfer host if player 1 left
-          if (playerIndex === 0) {
-            io.to(game.players[0].id).emit('you-are-host');
+          if (game.players.length === 0) {
+            if (game.timer) clearInterval(game.timer);
+            games.delete(roomCode);
+            console.log('Game deleted (no players):', roomCode);
+          } else {
+            io.to(roomCode).emit('player-left', { playerName });
+            io.to(roomCode).emit('players-ready', {
+              players: game.players.map(p => ({ name: p.name, score: p.score, color: p.color, wins: p.wins }))
+            });
+            if (idx === 0) {
+              const first = game.players.find(p2 => p2.id);
+              if (first) io.to(first.id).emit('you-are-host');
+            }
           }
-        }
+        }, 60000);
         
-        break; // Player can only be in one game
+        break;
       }
     }
+  });
+
+  socket.on('rejoin-game', ({ roomCode, rejoinToken }) => {
+    const game = games.get(roomCode);
+    if (!game) {
+      socket.emit('rejoin-failed', { message: 'Game not found' });
+      return;
+    }
+    
+    const playerIndex = game.players.findIndex(p => p.rejoinToken === rejoinToken);
+    if (playerIndex === -1) {
+      socket.emit('rejoin-failed', { message: 'Could not rejoin' });
+      return;
+    }
+    
+    const player = game.players[playerIndex];
+    if (player.rejoinTimeout) {
+      clearTimeout(player.rejoinTimeout);
+      player.rejoinTimeout = null;
+    }
+    
+    player.id = socket.id;
+    socket.join(roomCode);
+    
+    const playerNumber = playerIndex + 1;
+    
+    if (game.status === 'waiting') {
+      socket.emit('rejoin-success', {
+        screen: 'waiting',
+        roomCode,
+        playerNumber,
+        players: game.players.map(p => ({ name: p.name, score: p.score, color: p.color, wins: p.wins })),
+        lastWinner: game.lastWinner
+      });
+      io.to(roomCode).emit('players-ready', {
+        players: game.players.map(p => ({ name: p.name, score: p.score, color: p.color, wins: p.wins }))
+      });
+    } else if (game.status === 'playing') {
+      socket.emit('rejoin-success', {
+        screen: 'game',
+        roomCode,
+        playerNumber,
+        category: game.category,
+        timeLeft: game.timeLeft,
+        players: game.players.map(p => ({ name: p.name, score: p.score, color: p.color, wins: p.wins })),
+        allAnswers: [] // Rejoiner doesn't get past answers - they'll see new ones as they come
+      });
+    } else if (game.status === 'finished') {
+      const results = game.players.map(p => ({
+        name: p.name,
+        score: p.score,
+        answers: p.answers,
+        wins: p.wins,
+        color: p.color
+      })).sort((a, b) => b.score - a.score);
+      const highScore = results[0]?.score ?? 0;
+      const winners = results.filter(p => p.score === highScore);
+      const winnerText = winners.length > 1 ? 'Tie!' : winners[0]?.name ?? '';
+      const categoryData = game.category && categories[game.category];
+      const allPossibleAnswers = categoryData ? categoryData.map(item => ({ answer: item.answer, points: item.points })) : [];
+      socket.emit('rejoin-success', {
+        screen: 'results',
+        roomCode,
+        playerNumber,
+        results,
+        winner: winnerText,
+        allPossibleAnswers
+      });
+    }
+    
+    console.log('Player rejoined:', roomCode, 'slot', playerNumber);
   });
 });
 
