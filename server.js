@@ -12,14 +12,21 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
+    origin: process.env.NODE_ENV === 'production' ? true : 'http://localhost:5173',
+    methods: ['GET', 'POST'],
     credentials: true
   }
 });
 
 // Serve static files
-app.use(express.static('public'));
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(join(__dirname, 'client', 'dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(join(__dirname, 'client', 'dist', 'index.html'));
+  });
+} else {
+  app.use(express.static('public'));
+}
 
 // Game state
 const games = new Map();

@@ -7,7 +7,7 @@ import ResultsScreen from './components/ResultsScreen'
 import ErrorToast from './components/ErrorToast'
 import './index.css'
 
-const socket = io('http://localhost:3000', {
+const socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:3000', {
   transports: ['websocket', 'polling']
 })
 

@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: categories-game
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: NODE_ENV=production node server.js
