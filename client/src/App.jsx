@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
 import HomeScreen from './components/HomeScreen'
 import WaitingRoom from './components/WaitingRoom'
@@ -26,6 +26,7 @@ function App() {
   const [feedback, setFeedback] = useState(null)
   const [lastWinner, setLastWinner] = useState(null)
   const [categoryList, setCategoryList] = useState([])
+  const hasJoinedGame = useRef(false)
 
   // Attempt rejoin on load (e.g. after refresh)
   useEffect(() => {
@@ -34,6 +35,7 @@ function App() {
     let data
     try {
       data = JSON.parse(saved)
+      if (!data?.roomCode || !data?.rejoinToken) throw new Error('Invalid rejoin data')
     } catch {
       sessionStorage.removeItem(REJOIN_KEY)
       return
@@ -50,6 +52,7 @@ function App() {
 
   useEffect(() => {
     socket.on('game-created', (data) => {
+      hasJoinedGame.current = true
       sessionStorage.setItem(REJOIN_KEY, JSON.stringify({ roomCode: data.roomCode, playerNumber: data.playerNumber, rejoinToken: data.rejoinToken }))
       setCurrentRoom(data.roomCode)
       setPlayerNumber(data.playerNumber)
@@ -59,6 +62,7 @@ function App() {
     })
 
     socket.on('game-joined', (data) => {
+      hasJoinedGame.current = true
       sessionStorage.setItem(REJOIN_KEY, JSON.stringify({ roomCode: data.roomCode, playerNumber: data.playerNumber, rejoinToken: data.rejoinToken }))
       setCurrentRoom(data.roomCode)
       setPlayerNumber(data.playerNumber)
@@ -68,6 +72,7 @@ function App() {
     })
 
     socket.on('rejoin-success', (data) => {
+      hasJoinedGame.current = true
       setCurrentRoom(data.roomCode)
       setPlayerNumber(data.playerNumber)
       if (data.screen === 'waiting') {
@@ -88,9 +93,11 @@ function App() {
     })
 
     socket.on('rejoin-failed', () => {
-      sessionStorage.removeItem(REJOIN_KEY)
-      setError('Could not rejoin game')
-      setTimeout(() => setError(null), 3000)
+      if (!hasJoinedGame.current) {
+        sessionStorage.removeItem(REJOIN_KEY)
+        setError('Could not rejoin game')
+        setTimeout(() => setError(null), 3000)
+      }
     })
 
     socket.on('players-ready', (data) => {
@@ -215,6 +222,7 @@ function App() {
   }
 
   const leaveGame = () => {
+    hasJoinedGame.current = false
     sessionStorage.removeItem(REJOIN_KEY)
     socket.emit('leave-game', currentRoom)
     setCurrentRoom(null)
