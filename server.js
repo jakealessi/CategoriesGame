@@ -20,7 +20,7 @@ const io = new Server(httpServer, {
 
 // API: get category list (for dropdown)
 app.get('/api/categories', (req, res) => {
-  res.json({ categories: Object.keys(categories) });
+  res.json({ categories: Object.keys(categories).sort() });
 });
 
 // Serve static files
