@@ -18,6 +18,11 @@ const io = new Server(httpServer, {
   }
 });
 
+// API: get category list (for dropdown)
+app.get('/api/categories', (req, res) => {
+  res.json({ categories: Object.keys(categories) });
+});
+
 // Serve static files
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(join(__dirname, 'client', 'dist')));
@@ -193,7 +198,7 @@ io.on('connection', (socket) => {
     console.log('Player joined game:', roomCode);
   });
 
-  socket.on('start-game', (roomCode) => {
+  socket.on('start-game', ({ roomCode, selectedCategory }) => {
     const game = games.get(roomCode);
     
     if (!game || game.players.length < 1) {
@@ -205,9 +210,14 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Use selected category if valid, otherwise random
+    const useCategory = selectedCategory && selectedCategory !== 'Random' && categories[selectedCategory]
+      ? selectedCategory
+      : getRandomCategory(game.lastCategory);
+    
     // Start the game
     game.status = 'playing';
-    game.category = getRandomCategory(game.lastCategory);
+    game.category = useCategory;
     game.lastCategory = game.category;
     game.timeLeft = 60;
     game.usedAnswers = []; // Reset used answers

@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from 'react'
 import ColorPicker from './ColorPicker'
 import styles from './WaitingRoom.module.css'
 
-export default function WaitingRoom({ roomCode, players, playerNumber, onStartGame, onLeaveGame, onUpdateName, onUpdateColor, lastWinner }) {
+export default function WaitingRoom({ roomCode, players, playerNumber, categoryList, onStartGame, onLeaveGame, onUpdateName, onUpdateColor, lastWinner }) {
   const [name, setName] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('Random')
   const [showCopied, setShowCopied] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const nameInitialized = useRef(false)
@@ -185,6 +186,28 @@ export default function WaitingRoom({ roomCode, players, playerNumber, onStartGa
           </div>
         </motion.div>
 
+        {playerNumber === 1 && (
+          <motion.div
+            className={styles.categorySection}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+          >
+            <label className={styles.categoryLabel} htmlFor="category-select">Category</label>
+            <select
+              id="category-select"
+              className={styles.categorySelect}
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="Random">Random</option>
+              {categoryList.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </motion.div>
+        )}
+
         <motion.div
           className={styles.actions}
           initial={{ opacity: 0 }}
@@ -194,7 +217,7 @@ export default function WaitingRoom({ roomCode, players, playerNumber, onStartGa
           {playerNumber === 1 && (
             <motion.button
               className={styles.startButton}
-              onClick={onStartGame}
+              onClick={() => onStartGame(selectedCategory)}
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >

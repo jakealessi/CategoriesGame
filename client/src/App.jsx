@@ -23,6 +23,7 @@ function App() {
   const [error, setError] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [lastWinner, setLastWinner] = useState(null)
+  const [categoryList, setCategoryList] = useState([])
 
   useEffect(() => {
     socket.on('game-created', (data) => {
@@ -30,6 +31,7 @@ function App() {
       setPlayerNumber(data.playerNumber)
       setLastWinner(null)
       setScreen('waiting')
+      fetchCategories()
     })
 
     socket.on('game-joined', (data) => {
@@ -37,6 +39,7 @@ function App() {
       setPlayerNumber(data.playerNumber)
       setLastWinner(null)
       setScreen('waiting')
+      fetchCategories()
     })
 
     socket.on('players-ready', (data) => {
@@ -136,6 +139,16 @@ function App() {
     }
   }, [])
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories')
+      const data = await res.json()
+      if (data.categories) setCategoryList(data.categories)
+    } catch (e) {
+      console.error('Failed to fetch categories:', e)
+    }
+  }
+
   const createGame = () => {
     socket.emit('create-game')
   }
@@ -144,8 +157,8 @@ function App() {
     socket.emit('join-game', roomCode)
   }
 
-  const startGame = () => {
-    socket.emit('start-game', currentRoom)
+  const startGame = (selectedCategory = 'Random') => {
+    socket.emit('start-game', { roomCode: currentRoom, selectedCategory })
   }
 
   const leaveGame = () => {
@@ -175,6 +188,7 @@ function App() {
           roomCode={currentRoom}
           players={players}
           playerNumber={playerNumber}
+          categoryList={categoryList}
           onStartGame={startGame}
           onLeaveGame={leaveGame}
           onUpdateName={updateName}

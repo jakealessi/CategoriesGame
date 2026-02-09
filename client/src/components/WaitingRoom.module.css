@@ -286,6 +286,38 @@
   font-weight: 500;
 }
 
+.categorySection {
+  margin-bottom: 24px;
+}
+
+.categoryLabel {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.categorySelect {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.categorySelect:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
 .actions {
   display: flex;
   gap: 10px;
