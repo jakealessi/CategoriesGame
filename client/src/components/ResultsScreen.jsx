@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { useMemo } from 'react'
+import { motion as Motion } from 'framer-motion'
+import GameHeader from './GameHeader'
 import styles from './ResultsScreen.module.css'
 
 const POINT_COLORS = { 1: 'var(--green)', 2: 'var(--orange)', 3: 'var(--magenta)' }
@@ -10,25 +10,22 @@ export default function ResultsScreen({ results }) {
   const { winner, results: playerResults, allPossibleAnswers } = results
 
   // Collect all answers that were found by any player
-  const foundAnswers = useMemo(() => {
-    const found = new Set()
-    playerResults.forEach(player => {
-      player.answers.forEach(a => found.add(a.toLowerCase()))
-    })
-    return found
-  }, [playerResults])
+  const foundAnswers = new Set()
+  playerResults.forEach(player => {
+    player.answers.forEach(a => foundAnswers.add(a.toLowerCase()))
+  })
 
   return (
     <div className={styles.container}>
-      <motion.div
+      <GameHeader />
+      <Motion.main
         className={styles.card}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25 }}
       >
-        {/* Auto-return countdown bar */}
         <div className={styles.countdownTrack}>
-          <motion.div
+          <Motion.div
             className={styles.countdownFill}
             initial={{ width: '100%' }}
             animate={{ width: '0%' }}
@@ -36,23 +33,20 @@ export default function ResultsScreen({ results }) {
           />
         </div>
 
-        <motion.h2
-          className={styles.winnerText}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          {winner === 'Tie!' ? "Tie Game!" : `${winner} Wins!`}
-        </motion.h2>
+        <header className={styles.resultHero}>
+          <h1 className={styles.winnerText}>
+            {winner === 'Tie!' ? 'A tie at the top.' : `${winner} takes the round.`}
+          </h1>
+        </header>
 
-        <motion.div
+        <Motion.div
           className={styles.results}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
           {playerResults.map((player, index) => (
-            <motion.div
+            <Motion.div
               key={index}
               className={`${styles.resultItem} ${index === 0 ? styles.first : ''}`}
               initial={{ opacity: 0, x: -30 }}
@@ -60,25 +54,25 @@ export default function ResultsScreen({ results }) {
               transition={{ delay: 0.25 + index * 0.08 }}
             >
               <div className={styles.resultHeader}>
-                <div className={styles.rank} style={{ background: player.color || '#999' }}>
-                  {index + 1}
-                </div>
+                <div className={styles.rank}>{String(index + 1).padStart(2, '0')}</div>
+                <span className={styles.playerMarker} style={{ background: player.color || '#79756f' }} />
                 <div className={styles.playerInfo}>
-                  <span className={styles.playerName} style={{ color: player.color || '#999' }}>{player.name}</span>
+                  <span className={styles.playerName}>{player.name}</span>
                   {player.wins > 0 && (
                     <span className={styles.winsCount}>
                       {player.wins} {player.wins === 1 ? 'win' : 'wins'}
                     </span>
                   )}
                 </div>
-                <motion.div
+                <Motion.div
                   className={styles.finalScore}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.4 + index * 0.08, type: 'spring', stiffness: 200 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.35 + index * 0.06 }}
                 >
                   {player.score}
-                </motion.div>
+                  <span> pts</span>
+                </Motion.div>
               </div>
               {player.answers.length > 0 && (
                 <div className={styles.answers}>
@@ -87,18 +81,21 @@ export default function ResultsScreen({ results }) {
                   ))}
                 </div>
               )}
-            </motion.div>
+            </Motion.div>
           ))}
-        </motion.div>
+        </Motion.div>
 
         {allPossibleAnswers && allPossibleAnswers.length > 0 && (
-          <motion.div
+          <Motion.div
             className={styles.allAnswersSection}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            <h3 className={styles.allAnswersTitle}>All Possible Answers</h3>
+            <div className={styles.allAnswersHeader}>
+              <h2 className={styles.allAnswersTitle}>Answers</h2>
+              <span>{foundAnswers.size} found</span>
+            </div>
             <div className={styles.allAnswersGrid}>
               {allPossibleAnswers.map((item, index) => {
                 const wasFound = foundAnswers.has(item.answer.toLowerCase())
@@ -108,14 +105,15 @@ export default function ResultsScreen({ results }) {
                     className={`${styles.possibleAnswer} ${styles[`points${item.points}`]} ${wasFound ? styles.found : ''}`}
                   >
                     <span className={styles.possibleAnswerText}>{item.answer}</span>
-                    <span className={styles.answerPoints} style={{ color: POINT_COLORS[item.points] || 'var(--text-secondary)' }}>{item.points}</span>
+                    <span className={styles.foundStatus}>{wasFound ? 'Found' : 'Missed'}</span>
+                    <span className={styles.answerPoints} style={{ color: POINT_COLORS[item.points] || 'var(--muted)' }}>{item.points} pt</span>
                   </div>
                 )
               })}
             </div>
-          </motion.div>
+          </Motion.div>
         )}
-      </motion.div>
+      </Motion.main>
     </div>
   )
 }

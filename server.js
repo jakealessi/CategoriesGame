@@ -143,7 +143,7 @@ function partialNameMatch(input, target) {
   );
 }
 
-const DEFAULT_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+const DEFAULT_COLORS = ['#b65f43', '#315c86', '#3f765c', '#9b732f'];
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

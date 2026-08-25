@@ -1,19 +1,19 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import styles from './ErrorToast.module.css'
 
 export default function ErrorToast({ message }) {
   return (
     <AnimatePresence>
       {message && (
-        <motion.div
+        <Motion.div
           className={styles.toast}
           initial={{ opacity: 0, y: -100 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -100 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          transition={{ duration: 0.18 }}
         >
           {message}
-        </motion.div>
+        </Motion.div>
       )}
     </AnimatePresence>
   )

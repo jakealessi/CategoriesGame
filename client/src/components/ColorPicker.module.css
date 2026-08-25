@@ -1,41 +1,24 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 24px);
-  gap: 3px;
-  padding: 4px;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
+  grid-template-columns: repeat(4, 28px);
+  gap: 6px;
 }
 
 .swatch {
-  width: 24px;
-  height: 24px;
-  border-radius: 3px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  min-width: 0;
+  border: 1px solid rgba(32, 38, 46, 0.35);
+  border-radius: 0;
+  cursor: pointer;
 }
 
 .swatch:hover {
-  border-color: rgba(0, 0, 0, 0.3);
+  border-color: var(--ink);
+  outline: 1px solid var(--ink);
 }
 
 .swatch.selected {
-  border-color: var(--text);
-  box-shadow: 0 0 0 1.5px var(--bg-card), 0 0 0 3px var(--text);
-}
-
-@media (max-width: 480px) {
-  .grid {
-    grid-template-columns: repeat(8, 20px);
-    gap: 2px;
-    padding: 3px;
-  }
-
-  .swatch {
-    width: 20px;
-    height: 20px;
-  }
+  border: 3px solid var(--paper);
+  outline: 2px solid var(--ink);
 }

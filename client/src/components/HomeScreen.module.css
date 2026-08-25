@@ -1,143 +1,138 @@
 .container {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  width: 100%;
+  flex-direction: column;
+  background: var(--bg);
 }
 
-.card {
-  background: var(--bg-card);
-  border-radius: var(--radius-xl);
-  padding: 56px 44px;
-  box-shadow: var(--shadow-xl);
-  max-width: 440px;
-  width: 100%;
-  border: 1px solid var(--border);
-}
-
-.titleBlock {
-  text-align: center;
-  margin-bottom: 44px;
+.main {
+  width: min(calc(100% - 40px), 460px);
+  margin: 0 auto;
+  padding: 72px 0;
+  flex: 1;
 }
 
 .title {
-  font-size: clamp(2.4rem, 6vw, 3.2rem);
-  color: var(--text);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
 }
 
-.subtitle {
-  margin-top: 10px;
-  color: var(--text-secondary);
-  font-size: 1.05rem;
-  font-weight: 500;
+.playPanel {
+  border: 1px solid var(--ink);
+  background: var(--paper);
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.createSection,
+.joinSection {
+  padding: 24px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--ink);
+  border-radius: 1px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .primaryButton {
   width: 100%;
-  padding: 16px 32px;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: white;
-  background: var(--blue);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  letter-spacing: 0.01em;
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .primaryButton:hover {
-  background: var(--blue-dark);
-  box-shadow: 0 8px 24px rgba(79, 124, 219, 0.3);
+  background: #39414b;
 }
-
-.divider {
-  text-align: center;
-  color: var(--text-secondary);
-  font-weight: 500;
-  position: relative;
-  font-size: 0.85rem;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 40%;
-  height: 1px;
-  background: var(--border);
-}
-
-.divider::before { left: 0; }
-.divider::after { right: 0; }
 
 .joinSection {
-  display: flex;
-  gap: 10px;
+  border-top: 1px solid var(--border);
+  background: #f0ece3;
+}
+
+.joinLabel {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.joinRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
 }
 
 .input {
-  flex: 1;
+  width: 100%;
   min-width: 0;
-  padding: 14px 16px;
-  font-size: 1.05rem;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  transition: border-color 0.2s, box-shadow 0.2s;
-  text-align: center;
-  font-weight: 700;
-  letter-spacing: 4px;
-  background: var(--bg-card);
-  color: var(--text);
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-right: 0;
+  border-radius: 1px 0 0 1px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 .input:focus {
-  outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(79, 124, 219, 0.12);
+  position: relative;
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
 }
 
 .secondaryButton {
-  padding: 14px 28px;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: white;
-  background: var(--green);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
+  border-radius: 0 1px 1px 0;
+  background: transparent;
 }
 
-.secondaryButton:hover {
-  background: var(--green-dark);
-  box-shadow: 0 8px 24px rgba(61, 184, 130, 0.3);
+.secondaryButton:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
 }
 
-@media (max-width: 480px) {
-  .card {
-    padding: 40px 24px;
+.secondaryButton:disabled {
+  border-color: #97938a;
+  color: #89867f;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .main {
+    width: min(calc(100% - 28px), 460px);
   }
 
+  .main {
+    padding: 42px 0;
+  }
+
+  .createSection,
   .joinSection {
-    flex-direction: column;
+    padding: 22px 18px;
+  }
+
+  .joinRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .input {
+    border-right: 1px solid var(--ink);
+    border-radius: 1px;
   }
 
   .secondaryButton {
-    width: 100%;
+    border-radius: 1px;
   }
 }

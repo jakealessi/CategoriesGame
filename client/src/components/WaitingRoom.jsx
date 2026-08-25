@@ -1,26 +1,18 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
 import ColorPicker from './ColorPicker'
+import GameHeader from './GameHeader'
 import styles from './WaitingRoom.module.css'
 
 export default function WaitingRoom({ roomCode, players, playerNumber, categoryList, onStartGame, onLeaveGame, onUpdateName, onUpdateColor, lastWinner }) {
-  const [name, setName] = useState('')
+  const [name, setName] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('Random')
   const [showCopied, setShowCopied] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
-  const nameInitialized = useRef(false)
   const colorPickerRef = useRef(null)
 
-  // Sync name from server data when players load (handles mount + remount)
-  useEffect(() => {
-    if (!nameInitialized.current && players.length > 0 && playerNumber) {
-      const myPlayer = players[playerNumber - 1]
-      if (myPlayer) {
-        setName(myPlayer.name)
-        nameInitialized.current = true
-      }
-    }
-  }, [players, playerNumber])
+  const myPlayer = players[playerNumber - 1]
+  const displayName = name ?? myPlayer?.name ?? ''
 
   const copyCode = () => {
     navigator.clipboard.writeText(roomCode)
@@ -29,8 +21,8 @@ export default function WaitingRoom({ roomCode, players, playerNumber, categoryL
   }
 
   const handleUpdateName = () => {
-    if (name.trim()) {
-      onUpdateName(name.trim())
+    if (displayName.trim()) {
+      onUpdateName(displayName.trim())
     }
   }
 
@@ -58,182 +50,140 @@ export default function WaitingRoom({ roomCode, players, playerNumber, categoryL
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showColorPicker])
 
-  const myColor = players[playerNumber - 1]?.color || '#e74c3c'
+  const myColor = myPlayer?.color || '#b65f43'
 
   return (
     <div className={styles.container}>
-      <motion.div
-        className={styles.card}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      <GameHeader />
+      <Motion.main
+        className={styles.main}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25 }}
       >
-        <motion.div
-          className={styles.roomCodeSection}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className={styles.roomCodeLabel}>Room Code</div>
-          <div className={styles.roomCodeDisplay}>
-            <span className={styles.roomCode}>{roomCode}</span>
-            <motion.button
-              className={styles.copyButton}
-              onClick={copyCode}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {showCopied ? '✓' : '⎘'}
-            </motion.button>
+        <div className={styles.pageHeading}>
+          <div>
+            <h1>Lobby</h1>
           </div>
-        </motion.div>
+          <button className={styles.leaveButton} onClick={handleLeave}>Leave room</button>
+        </div>
 
-        <motion.div
-          className={styles.nameSection}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className={styles.nameRow}>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
-              onBlur={handleUpdateName}
-              maxLength={20}
-              className={styles.input}
-              placeholder="Your name"
-            />
-            <motion.button
-              className={styles.updateButton}
-              onClick={handleUpdateName}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              ✓
-            </motion.button>
-            <div className={styles.colorPickerWrapper} ref={colorPickerRef}>
-              <motion.button
-                className={styles.colorSwatch}
-                style={{ background: myColor }}
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              />
-              <AnimatePresence>
-                {showColorPicker && (
-                  <motion.div
-                    className={styles.colorDropdown}
-                    initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <ColorPicker
-                      currentColor={myColor}
-                      onSelectColor={handleColorSelect}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+        <div className={styles.lobbyGrid}>
+          <section className={styles.roomPanel}>
+            <div className={styles.sectionHeader}>
+              <h2>Room code</h2>
             </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className={styles.playersSection}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className={styles.playersSectionHeader}>
-            <span className={styles.playersLabel}>Players</span>
-            <span className={styles.playersCount}>{players.length}/4</span>
-          </div>
-          <div className={styles.playersList}>
-            <AnimatePresence>
-              {players.map((player, index) => {
-                const isLastWinner = lastWinner && lastWinner.includes(player.name)
-                return (
-                  <motion.div
-                    key={index}
-                    className={`${styles.playerItem} ${isLastWinner ? styles.winnerGlow : ''}`}
-                    style={isLastWinner ? { '--glow-color': player.color || '#e74c3c' } : undefined}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: index * 0.05 }}
+            <div className={styles.roomCodeDisplay}>
+              <span className={styles.roomCode}>{roomCode}</span>
+              <button className={styles.copyButton} onClick={copyCode}>
+                {showCopied ? 'Copied' : 'Copy code'}
+              </button>
+            </div>
+            <div className={styles.identitySection}>
+              <label className={styles.fieldLabel} htmlFor="player-name">Your display name</label>
+              <div className={styles.nameRow}>
+                <input
+                  id="player-name"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
+                  onBlur={handleUpdateName}
+                  maxLength={20}
+                  className={styles.input}
+                  placeholder="Your name"
+                />
+                <button className={styles.updateButton} onClick={handleUpdateName}>Save</button>
+                <div className={styles.colorPickerWrapper} ref={colorPickerRef}>
+                  <button
+                    className={styles.colorButton}
+                    onClick={() => setShowColorPicker(!showColorPicker)}
+                    aria-label="Change player color"
+                    aria-expanded={showColorPicker}
                   >
-                    <span className={styles.playerAvatar} style={{ background: player.color || '#e74c3c' }}>{player.name.charAt(0).toUpperCase()}</span>
-                    <span className={styles.playerName}>
-                      {player.name}
-                      {index + 1 === playerNumber && <span className={styles.youBadge}>you</span>}
-                    </span>
-                    {player.wins > 0 && (
-                      <span className={styles.winTally}>{player.wins}W</span>
+                    <span className={styles.colorSwatch} style={{ background: myColor }} />
+                    Color
+                  </button>
+                  <AnimatePresence>
+                    {showColorPicker && (
+                      <Motion.div
+                        className={styles.colorDropdown}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.12 }}
+                      >
+                        <ColorPicker currentColor={myColor} onSelectColor={handleColorSelect} />
+                      </Motion.div>
                     )}
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-            {players.length < 4 && (
-              <div className={styles.emptySlot}>
-                <span className={styles.emptyAvatar}>+</span>
-                <span className={styles.emptyText}>Waiting for players...</span>
+                  </AnimatePresence>
+                </div>
               </div>
-            )}
-          </div>
-        </motion.div>
+            </div>
+          </section>
 
-        {playerNumber === 1 && (
-          <motion.div
-            className={styles.categorySection}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
-          >
-            <label className={styles.categoryLabel} htmlFor="category-select">Category</label>
-            <select
-              id="category-select"
-              className={styles.categorySelect}
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="Random">Random</option>
-              {categoryList.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </motion.div>
-        )}
+          <section className={styles.playersSection}>
+            <div className={styles.sectionHeader}>
+              <h2>Players</h2>
+              <span>{players.length} of 4</span>
+            </div>
+            <div className={styles.playersList}>
+              <AnimatePresence>
+                {players.map((player, index) => {
+                  const isLastWinner = lastWinner && lastWinner.includes(player.name)
+                  return (
+                    <Motion.div
+                      key={index}
+                      className={`${styles.playerItem} ${isLastWinner ? styles.lastWinner : ''}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <span className={styles.playerMarker} style={{ background: player.color || '#b65f43' }} />
+                      <span className={styles.playerName}>{player.name}</span>
+                      {index + 1 === playerNumber && <span className={styles.youBadge}>You</span>}
+                      {isLastWinner && <span className={styles.winnerBadge}>Last winner</span>}
+                      {player.wins > 0 && <span className={styles.winTally}>{player.wins}W</span>}
+                    </Motion.div>
+                  )
+                })}
+              </AnimatePresence>
+              {players.length < 4 && (
+                <div className={styles.emptySlot}>
+                  <span className={styles.emptyMarker}>{players.length + 1}</span>
+                  <span>Waiting for another player</span>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
 
-        <motion.div
-          className={styles.actions}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          {playerNumber === 1 && (
-            <motion.button
-              className={styles.startButton}
-              onClick={() => onStartGame(selectedCategory)}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Start Game
-            </motion.button>
+        <section className={styles.controls}>
+          {playerNumber === 1 ? (
+            <>
+              <div className={styles.categorySection}>
+                <label className={styles.fieldLabel} htmlFor="category-select">Round category</label>
+                <select
+                  id="category-select"
+                  className={styles.categorySelect}
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="Random">Choose for me</option>
+                  {categoryList.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <button className={styles.startButton} onClick={() => onStartGame(selectedCategory)}>
+                Start round
+              </button>
+            </>
+          ) : (
+            <p className={styles.waitingMessage}>Waiting for host</p>
           )}
-          <motion.button
-            className={styles.leaveButton}
-            onClick={handleLeave}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Leave
-          </motion.button>
-        </motion.div>
-      </motion.div>
+        </section>
+      </Motion.main>
     </div>
   )
 }
